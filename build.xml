@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="MCClone" default="makejar" basedir=".">
+    <target name="makejar" description="Create a jar for the project">
+        <mkdir dir="target"></mkdir>
+    	<fileset dir="bin"></fileset>
+        <jar destfile="target/${ant.project.name}.jar">
+            <fileset dir="bin"></fileset>
+        	<manifest>
+        		<attribute name="Main-Class" value="net.TADT.MCClone.Main"/>
+        	</manifest>
+            <fileset file=""></fileset>
+        	<fileset dir="bin"></fileset>
+        </jar>
+    </target>
+	<target name="execbat">
+	  <exec executable="cmd">
+	    <arg value="/c"/>
+	    <arg value="ant.bat"/>
+	    <arg value="-p"/>
+	  </exec>
+	</target>
+</project>
