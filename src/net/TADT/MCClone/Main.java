@@ -6,12 +6,18 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import org.joml.Matrix4f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
+import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
 
 public class Main {
@@ -86,7 +92,21 @@ public class Main {
 		// Make the window visible
 		glfwShowWindow(window);
 	}
+    GLFWErrorCallback errorCallback;
+    GLFWKeyCallback   keyCallback;
+    GLFWFramebufferSizeCallback fbCallback;
 
+    int width = 640;
+    int height = 480;
+
+    // JOML matrices
+    Matrix4f projMatrix = new Matrix4f();
+    Matrix4f viewMatrix = new Matrix4f();
+    Matrix4f modelMatrix = new Matrix4f();
+    Matrix4f modelViewMatrix = new Matrix4f();
+
+    // FloatBuffer for transferring matrices to OpenGL
+    FloatBuffer fb = BufferUtils.createFloatBuffer(16);
 	private void loop() {
 		// This line is critical for LWJGL's interoperation with GLFW's
 		// OpenGL context, or any context that is managed externally.
@@ -96,7 +116,15 @@ public class Main {
 		GL.createCapabilities();
 
 		// Set the clear color
-		glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+	//	glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+	    glClearColor(0.6f, 0.7f, 0.8f, 1.0f);
+        // Enable depth testing
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        // Remember the current time.
+        long firstTime = System.nanoTime();
+
 
 		// Run the rendering loop until the user has attempted to close
 		// the window or has pressed the ESCAPE key.
@@ -104,7 +132,76 @@ public class Main {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
 			glfwSwapBuffers(window); // swap the color buffers
+			// Build time difference between this and first time. 
+            long thisTime = System.nanoTime();
+            float diff = (thisTime - firstTime) / 1E9f;
+            // Compute some rotation angle.
+            float angle = diff;
 
+            // Make the viewport always fill the whole window.
+            glViewport(0, 0, width, height);
+
+            // Build the projection matrix. Watch out here for integer division
+            // when computing the aspect ratio!
+            projMatrix.setPerspective((float) Math.toRadians(40),
+                                      (float)width/height, 0.01f, 100.0f);
+            glMatrixMode(GL_PROJECTION);
+            glLoadMatrixf(projMatrix.get(fb));
+
+            // Set lookat view matrix
+            viewMatrix.setLookAt(0.0f, 4.0f, 10.0f,
+                                 0.0f, 0.0f, 0.0f,
+                                 0.0f, 1.0f, 0.0f);
+            glMatrixMode(GL_MODELVIEW);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // Render some grid of cubes at different x and z positions
+            for (int x = -2; x <= 2; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    modelMatrix.translation(x * 2.0f, 0, z * 2.0f)
+                               .rotateY(angle * (float) Math.toRadians(90));
+                    glLoadMatrixf(viewMatrix.mul(modelMatrix, modelViewMatrix).get(fb));
+                    GL11.glTranslatef(0f,0.0f,-7f);             
+       	         GL11.glRotatef(45f,0.0f,1.0f,0.0f);               
+       	         GL11.glColor3f(0.5f,0.5f,1.0f);  
+       	         glBegin(GL_QUADS);
+       	         glColor3f(   0.0f,  0.0f,  0.2f );
+       	         glVertex3f(  0.5f, -0.5f, -0.5f );
+       	         glVertex3f( -0.5f, -0.5f, -0.5f );
+       	         glVertex3f( -0.5f,  0.5f, -0.5f );
+       	         glVertex3f(  0.5f,  0.5f, -0.5f );
+       	         glColor3f(   0.0f,  0.0f,  1.0f );
+       	         glVertex3f(  0.5f, -0.5f,  0.5f );
+       	         glVertex3f(  0.5f,  0.5f,  0.5f );
+       	         glVertex3f( -0.5f,  0.5f,  0.5f );
+       	         glVertex3f( -0.5f, -0.5f,  0.5f );
+       	         glColor3f(   1.0f,  0.0f,  0.0f );
+       	         glVertex3f(  0.5f, -0.5f, -0.5f );
+       	         glVertex3f(  0.5f,  0.5f, -0.5f );
+       	         glVertex3f(  0.5f,  0.5f,  0.5f );
+       	         glVertex3f(  0.5f, -0.5f,  0.5f );
+       	         glColor3f(   0.2f,  0.0f,  0.0f );
+       	         glVertex3f( -0.5f, -0.5f,  0.5f );
+       	         glVertex3f( -0.5f,  0.5f,  0.5f );
+       	         glVertex3f( -0.5f,  0.5f, -0.5f );
+       	         glVertex3f( -0.5f, -0.5f, -0.5f );
+       	         glColor3f(   0.0f,  1.0f,  0.0f );
+       	         glVertex3f(  0.5f,  0.5f,  0.5f );
+       	         glVertex3f(  0.5f,  0.5f, -0.5f );
+       	         glVertex3f( -0.5f,  0.5f, -0.5f );
+       	         glVertex3f( -0.5f,  0.5f,  0.5f );
+       	         glColor3f(   0.0f,  0.2f,  0.0f );
+       	         glVertex3f(  0.5f, -0.5f, -0.5f );
+       	         glVertex3f(  0.5f, -0.5f,  0.5f );
+       	         glVertex3f( -0.5f, -0.5f,  0.5f );
+       	         glVertex3f( -0.5f, -0.5f, -0.5f );
+       	         glEnd();
+       	        // System.out.println("aa");
+                }
+            }
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+	       
 			// Poll for window events. The key callback above will only be
 			// invoked during this call.
 			glfwPollEvents();
@@ -112,7 +209,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-		//new Main().run();
+		new Main().run();
 	}
 
 }
