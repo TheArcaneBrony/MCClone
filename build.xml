@@ -9,7 +9,8 @@
         		<attribute name="Main-Class" value="net.TADT.MCClone.Main"/>
         	</manifest>
             <fileset file=""></fileset>
-        	<fileset dir="bin"></fileset>
+        	<fileset dir="lib"></fileset>
+        	<fileset dir="Libs"></fileset>
         </jar>
     </target>
 	<target name="execbat">
